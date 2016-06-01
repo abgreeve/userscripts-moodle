@@ -15,7 +15,7 @@
 // @match           https://*.moodle.local/*
 // @grant           none
 // @author          Frédéric Massart - FMCorz.net
-// @version         0.520
+// @version         0.522
 // ==/UserScript==
 
 var mdkToolbar = {
@@ -29,6 +29,26 @@ var mdkToolbar = {
         teacher_prefix: 't',
         teacher_count: 3,
         teacher_password: 'test',
+        // Change s1 to user names if you know what they are.
+        students: {
+            's1': 's1',
+            's2': 's2',
+            's3': 's3',
+            's4': 's4',
+            's5': 's5',
+            's6': 's6',
+            's7': 's7',
+            's8': 's8',
+            's9': 's9',
+            's10': 's10',
+            'random' : 'Random'
+        },
+        teachers: {
+            't1': 't1',
+            't2': 't2',
+            't3': 't3',
+            'random': 'Random'
+        },
         langs: [
             'en',
             'fr',
@@ -217,6 +237,7 @@ var mdkToolbar = {
         e.appendChild(D.createTextNode(' | '));
 
         // Login
+
         e.appendChild(D.createTextNode('Login as: '));
         p = D.createElement('a');
         p.href = '#';
@@ -225,16 +246,70 @@ var mdkToolbar = {
         e.appendChild(p);
         e.appendChild(D.createTextNode(' - '));
         p = D.createElement('a');
-        p.href = '#';
-        p.textContent = 'teacher';
-        p.onclick = function () { scope.login(scope, 'teacher'); return false; };
-        e.appendChild(p);
+
+        var select = D.createElement('select');
+        var option = D.createElement('option');
+        option.value = '';
+        option.text = 'Teachers';
+        select.appendChild(option);
+        var teachers = this.settings.get('teachers');
+        var t = 1;
+        for (var index in teachers) {
+            var userindex = 't' + t;
+            if (teachers[index] === 'Random') {
+                userindex = 'random';
+            }
+            option = D.createElement('option');
+            option.value = userindex;
+            option.text = teachers[userindex];
+            option.selected = (document.getElementsByTagName('html')[0].lang == option.value) ? 'selected' : '';
+            select.appendChild(option);
+            t++;
+        }
+
+        select.onchange = function() {
+            if (!this.value) {
+                return;
+            }
+            scope.login(scope, 'teacher', this.value);
+            //scope.login(scope, 'student', this.value);
+            return false;
+
+        };
+        e.appendChild(select);
+
         e.appendChild(D.createTextNode(' - '));
-        p = D.createElement('a');
-        p.href = '#';
-        p.textContent = 'student';
-        p.onclick = function () { scope.login(scope, 'student'); return false; };
-        e.appendChild(p);
+
+        select = D.createElement('select');
+        option = D.createElement('option');
+        option.value = '';
+        option.text = 'Students';
+        select.appendChild(option);
+        var students = this.settings.get('students');
+        var j = 1;
+        for (var index in students) {
+            var userindex = 's' + j;
+            if (students[index] === 'Random') {
+                userindex = 'random';
+            }
+            option = D.createElement('option');
+            option.value = userindex;
+            option.text = students[userindex];
+            option.selected = (document.getElementsByTagName('html')[0].lang == option.value) ? 'selected' : '';
+            select.appendChild(option);
+            j++;
+        }
+
+        select.onchange = function() {
+            if (!this.value) {
+                return;
+            }
+            scope.login(scope, 'student', this.value);
+            //scope.login(scope, 'student', this.value);
+            return false;
+
+        };
+        e.appendChild(select);
 
         // Separator.
         e.appendChild(D.createTextNode(' | '));
@@ -269,8 +344,8 @@ var mdkToolbar = {
         e.appendChild(D.createTextNode(' | '));
 
         // Switch language.
-        var select = D.createElement('select');
-        var option = D.createElement('option');
+        select = D.createElement('select');
+        option = D.createElement('option');
         option.value = '';
         option.text = 'Lang';
         select.appendChild(option);
@@ -370,17 +445,26 @@ var mdkToolbar = {
         }
     },
 
-    login: function(scope, mode) {
+    login: function(scope, mode, userdetail) {
         if (typeof(mode) === 'undefined') { mode = 'admin'; }
+        if (typeof(userdetail) === 'undefined') { userdetail = ''; }
 
         var submit_form = function(doc, mode) {
             var login = '';
             var password = '';
             if (mode == 'student') {
-                login = scope.settings.get('student_prefix') + parseInt(Math.random() * parseInt(scope.settings.get('student_count'), 10) + 1, 10);
+                if (userdetail !== '' && userdetail !== 'random') {
+                    login = userdetail;
+                } else {
+                    login = scope.settings.get('student_prefix') + parseInt(Math.random() * parseInt(scope.settings.get('student_count'), 10) + 1, 10);
+                }
                 password = scope.settings.get('student_password');
             } else if (mode == 'teacher') {
-                login = scope.settings.get('teacher_prefix') + parseInt(Math.random() * parseInt(scope.settings.get('teacher_count'), 10) + 1, 10);
+                if (userdetail !== '' && userdetail !== 'random') {
+                    login = userdetail;
+                } else {
+                    login = scope.settings.get('teacher_prefix') + parseInt(Math.random() * parseInt(scope.settings.get('teacher_count'), 10) + 1, 10);
+                }
                 password = scope.settings.get('teacher_password');
             } else {
                 login = scope.settings.get('admin_login');
